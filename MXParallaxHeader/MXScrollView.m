@@ -40,6 +40,7 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
 
 @synthesize delegate = _delegate;
 @synthesize bounces = _bounces;
+@synthesize isHeaderClosed = _isHeaderClosed;
 
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame: frame];
@@ -172,32 +173,50 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
         if (diff == 0.0 || !_isObserving) return;
         
         if (object == self) {
-            
-            //Adjust self scroll offset when scroll down
-            if (diff > 0 && _lock) {
+
+            if (diff > 0 && _lock && _isHeaderClosed) {
+                /* HeaderView - Closed - Scroll Up */
+                // NSLog(@"Log Scroll Header - Closed - Scroll Up %f", self.contentOffset.y);
                 [self scrollView:self setContentOffset:old];
-                
+                _isHeaderClosed = true;
             } else if (self.contentOffset.y < -self.contentInset.top && !self.bounces) {
+                // NSLog(@"Log Scroll Header == 333 %f | InsetTop: %f | bounes: %@f", self.contentOffset.y, self.contentInset.top, self.bounces);
                 [self scrollView:self setContentOffset:CGPointMake(self.contentOffset.x, -self.contentInset.top)];
+                _isHeaderClosed = true;
             } else if (self.contentOffset.y > -self.parallaxHeader.minimumHeight) {
+                /* HeaderView - Closed - Scroll Down */
+                // NSLog(@"Log Scroll Header - Closed - Scroll Down %@", self.contentOffset.y);
                 [self scrollView:self setContentOffset:CGPointMake(self.contentOffset.x, -self.parallaxHeader.minimumHeight)];
+                _isHeaderClosed = true;
+            } else {
+                /* HeaderView - Scroll - Appear */
+                // NSLog(@"Log Scroll Header Unknown %f", self.contentOffset.y);
+                _isHeaderClosed = false;
             }
-            
         } else {
-            //Adjust the observed scrollview's content offset
+            /* ContentView - Scroll */
             UIScrollView *scrollView = object;
             _lock = (scrollView.contentOffset.y > -scrollView.contentInset.top);
-            
-            //Manage scroll up
+            _isHeaderClosed = false;
             if (self.contentOffset.y < -self.parallaxHeader.minimumHeight && _lock && diff < 0) {
-//                [self scrollView:scrollView setContentOffset:old];
-            }
-            //Disable bouncing when scroll down
-            if (!_lock && ((self.contentOffset.y > -self.contentInset.top) || self.bounces)) {
-//                [self scrollView:scrollView setContentOffset:CGPointMake(scrollView.contentOffset.x, -scrollView.contentInset.top)];
+                /* ContentView - Closing - Scroll Down */
+                // NSLog(@"Log Scroll Content - Closing - Scroll Down %f", self.contentOffset.y);
+                [self scrollView:scrollView setContentOffset:old];
+            } else if (!_lock && ((self.contentOffset.y > -self.contentInset.top) || self.bounces)) {
+                // Disable bouncing when scroll down
+                /* ContentView - Opening - Scroll Up */
+                // NSLog(@"Log Scroll Content - Opening - Scroll Up %f", self.contentOffset.y);
+                if (self.contentOffset.y != scrollView.contentOffset.y) {
+                    [self scrollView:scrollView setContentOffset:CGPointMake(scrollView.contentOffset.x, -scrollView.contentInset.top)];
+                }
+            } else {
+                /* ContentView - Closing */
+                // NSLog(@"Log Scroll Content != Closed %f", self.contentOffset.y);
+                _isHeaderClosed = true;
             }
         }
     } else {
+        // NSLog(@"Log Scroll is Not Observer");
         [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
     }
 }
