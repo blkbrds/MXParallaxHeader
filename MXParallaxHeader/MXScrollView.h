@@ -53,6 +53,7 @@ NS_ASSUME_NONNULL_BEGIN
  Delegate instance that adopt the MXScrollViewDelegate.
  */
 @property (nonatomic, weak, nullable) IBOutlet id<MXScrollViewDelegate> delegate;
+@property (nonatomic) BOOL isHeaderClosed;
 
 @end
 
