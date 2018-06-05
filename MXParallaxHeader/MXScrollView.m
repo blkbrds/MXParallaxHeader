@@ -190,11 +190,11 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
             
             //Manage scroll up
             if (self.contentOffset.y < -self.parallaxHeader.minimumHeight && _lock && diff < 0) {
-                [self scrollView:scrollView setContentOffset:old];
+//                [self scrollView:scrollView setContentOffset:old];
             }
             //Disable bouncing when scroll down
             if (!_lock && ((self.contentOffset.y > -self.contentInset.top) || self.bounces)) {
-                [self scrollView:scrollView setContentOffset:CGPointMake(scrollView.contentOffset.x, -scrollView.contentInset.top)];
+//                [self scrollView:scrollView setContentOffset:CGPointMake(scrollView.contentOffset.x, -scrollView.contentInset.top)];
             }
         }
     } else {
