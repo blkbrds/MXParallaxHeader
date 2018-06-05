@@ -176,11 +176,16 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
             //Adjust self scroll offset when scroll down
             if (diff > 0 && _lock) {
                 [self scrollView:self setContentOffset:old];
-                
+                if ([self.delegate respondsToSelector:@selector(scrollView:scrollViewTopEearUp:)]) {
+                    [self.delegate scrollView:self scrollViewTopEearUp:diff];
+                }
             } else if (self.contentOffset.y < -self.contentInset.top && !self.bounces) {
                 [self scrollView:self setContentOffset:CGPointMake(self.contentOffset.x, -self.contentInset.top)];
             } else if (self.contentOffset.y > -self.parallaxHeader.minimumHeight) {
                 [self scrollView:self setContentOffset:CGPointMake(self.contentOffset.x, -self.parallaxHeader.minimumHeight)];
+                if ([self.delegate respondsToSelector:@selector(scrollView:scrollViewTopEearDown:)]) {
+                    [self.delegate scrollView:self scrollViewTopEearDown:diff];
+                }
             }
             
         } else {
@@ -191,10 +196,16 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
             //Manage scroll up
             if (self.contentOffset.y < -self.parallaxHeader.minimumHeight && _lock && diff < 0) {
                 [self scrollView:scrollView setContentOffset:old];
+                if ([self.delegate respondsToSelector:@selector(scrollView:scrollViewOpening:)]) {
+                    [self.delegate scrollView:self scrollViewOpening:diff];
+                }
             }
             //Disable bouncing when scroll down
             if (!_lock && ((self.contentOffset.y > -self.contentInset.top) || self.bounces)) {
                 [self scrollView:scrollView setContentOffset:CGPointMake(scrollView.contentOffset.x, -scrollView.contentInset.top)];
+                if ([self.delegate respondsToSelector:@selector(scrollView:scrollViewClosesing:)]) {
+                    [self.delegate scrollView:self scrollViewClosesing:diff];
+                }
             }
         }
     } else {

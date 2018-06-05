@@ -41,6 +41,10 @@ NS_ASSUME_NONNULL_BEGIN
  @return YES to allow scrollview and subview to scroll together. YES by default.
  */
 - (BOOL)scrollView:(MXScrollView *)scrollView shouldScrollWithSubView:(UIScrollView *)subView;
+- (void)scrollView:(MXScrollView *)scrollView scrollViewTopEearDown:(CGFloat) diff;
+- (void)scrollView:(MXScrollView *)scrollView scrollViewTopEearUp:(CGFloat) diff;
+- (void)scrollView:(MXScrollView *)scrollView scrollViewClosesing:(CGFloat) diff;
+- (void)scrollView:(MXScrollView *)scrollView scrollViewOpening:(CGFloat) diff;
 
 @end
 
