@@ -189,7 +189,7 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
                 [self scrollView:self setContentOffset:CGPointMake(self.contentOffset.x, -self.parallaxHeader.minimumHeight)];
                 _isHeaderClosed = true;
             } else {
-                /* HeaderView - Scroll - Unknown */
+                /* HeaderView - Scroll - Appear */
                 // NSLog(@"Log Scroll Header Unknown %f", self.contentOffset.y);
                 _isHeaderClosed = false;
             }
@@ -216,7 +216,7 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
             }
         }
     } else {
-        NSLog(@"Log Scroll is Not Observer");
+        // NSLog(@"Log Scroll is Not Observer");
         [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
     }
 }
