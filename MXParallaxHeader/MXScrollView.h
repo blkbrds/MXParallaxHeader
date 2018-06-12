@@ -55,6 +55,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak, nullable) IBOutlet id<MXScrollViewDelegate> delegate;
 @property (nonatomic) BOOL isHeaderClosed;
 
+- (void) collapseHeader;
+
 @end
 
 NS_ASSUME_NONNULL_END
