@@ -34,6 +34,7 @@
 @implementation MXScrollView {
     BOOL _isObserving;
     BOOL _lock;
+    BOOL _isLockKVO;
 }
 
 static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
@@ -94,6 +95,11 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
     return self.forwarder.delegate;
 }
 
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    // When user touch began at header
+    _isLockKVO = false;
+}
+
 #pragma mark <UIGestureRecognizerDelegate>
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
@@ -143,6 +149,12 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
 
 #pragma mark KVO
 
+- (void) collapseHeader {
+    // Collapse header content view
+    [self scrollView: self setContentOffset: CGPointZero];
+    _isLockKVO = true;
+}
+
 - (void)addObserverToView:(UIScrollView *)scrollView {
     _lock = (scrollView.contentOffset.y > -scrollView.contentInset.top);
     
@@ -163,7 +175,14 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
 
 //This is where the magic happens...
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
-    
+
+    if (object != self) {
+        // Disable lock KVO when user scroll in content scroll view
+        _isLockKVO = false;
+    }
+
+    if (_isLockKVO) { return; }
+
     if (context == kMXScrollViewKVOContext && [keyPath isEqualToString:NSStringFromSelector(@selector(contentOffset))]) {
         
         CGPoint new = [[change objectForKey:NSKeyValueChangeNewKey] CGPointValue];
@@ -250,6 +269,12 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
 
 #pragma mark <UIScrollViewDelegate>
 
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    if (_isLockKVO) {
+        [self setContentOffset:CGPointZero];
+    }
+}
+
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
     _lock = NO;
     [self removeObservedViews];
@@ -275,6 +300,13 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
 }
 
 #pragma mark <UIScrollViewDelegate>
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    [(MXScrollView *)scrollView scrollViewDidScroll:scrollView];
+    if ([self.delegate respondsToSelector:_cmd]) {
+        [self.delegate scrollViewDidScroll:scrollView];
+    }
+}
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
     [(MXScrollView *)scrollView scrollViewDidEndDecelerating:scrollView];
