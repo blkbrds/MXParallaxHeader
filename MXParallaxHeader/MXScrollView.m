@@ -153,6 +153,7 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
     // Collapse header content view
     [self scrollView: self setContentOffset: CGPointZero];
     _isLockKVO = true;
+    _isHeaderClosed = YES;
 }
 
 - (void)addObserverToView:(UIScrollView *)scrollView {
@@ -199,12 +200,12 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
                 [self scrollView:self setContentOffset:old];
                 _isHeaderClosed = true;
             } else if (self.contentOffset.y < -self.contentInset.top && !self.bounces) {
-                // NSLog(@"Log Scroll Header == 333 %f | InsetTop: %f | bounes: %@f", self.contentOffset.y, self.contentInset.top, self.bounces);
+                // NSLog(@"Log Scroll Header == 333 %f | InsetTop: %f | bounes: %f", self.contentOffset.y, self.contentInset.top, self.bounces);
                 [self scrollView:self setContentOffset:CGPointMake(self.contentOffset.x, -self.contentInset.top)];
                 _isHeaderClosed = true;
             } else if (self.contentOffset.y > -self.parallaxHeader.minimumHeight) {
                 /* HeaderView - Closed - Scroll Down */
-                // NSLog(@"Log Scroll Header - Closed - Scroll Down %@", self.contentOffset.y);
+                // NSLog(@"Log Scroll Header - Closed - Scroll Down %f", self.contentOffset.y);
                 [self scrollView:self setContentOffset:CGPointMake(self.contentOffset.x, -self.parallaxHeader.minimumHeight)];
                 _isHeaderClosed = true;
             } else {
@@ -287,6 +288,10 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
     }
 }
 
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
+    _isLockKVO = NO;
+}
+
 @end
 
 @implementation MXScrollViewDelegateForwarder
@@ -319,6 +324,13 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
     [(MXScrollView *)scrollView scrollViewDidEndDragging:scrollView willDecelerate:decelerate];
     if ([self.delegate respondsToSelector:_cmd]) {
         [self.delegate scrollViewDidEndDragging:scrollView willDecelerate:decelerate];
+    }
+}
+
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView{
+    [(MXScrollView *)scrollView scrollViewWillBeginDragging:scrollView];
+    if ([self.delegate respondsToSelector:_cmd]) {
+        [self.delegate scrollViewWillBeginDragging:scrollView];
     }
 }
 
