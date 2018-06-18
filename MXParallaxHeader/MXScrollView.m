@@ -62,19 +62,19 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
 - (void)initialize {
     self.forwarder = [MXScrollViewDelegateForwarder new];
     super.delegate = self.forwarder;
-    
+
     self.showsVerticalScrollIndicator = NO;
     self.directionalLockEnabled = YES;
     self.bounces = YES;
-    
+
     if (@available(iOS 11.0, *)) {
         self.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
     }
-    
+
     self.panGestureRecognizer.cancelsTouchesInView = NO;
-    
+
     self.observedViews = [NSMutableArray array];
-    
+
     [self addObserver:self forKeyPath:NSStringFromSelector(@selector(contentOffset))
               options:NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld
               context:kMXScrollViewKVOContext];
@@ -103,29 +103,29 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
 #pragma mark <UIGestureRecognizerDelegate>
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    
+
     if (otherGestureRecognizer.view == self) {
         return NO;
     }
-    
+
     // Ignore other gesture than pan
     if (![gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
         return NO;
     }
-    
+
     // Lock horizontal pan gesture.
     CGPoint velocity = [(UIPanGestureRecognizer*)gestureRecognizer velocityInView:self];
     if (fabs(velocity.x) > fabs(velocity.y)) {
         return NO;
     }
-    
+
     // Consider scroll view pan only
     if (![otherGestureRecognizer.view isKindOfClass:[UIScrollView class]]) {
         return NO;
     }
-    
+
     UIScrollView *scrollView = (id)otherGestureRecognizer.view;
-    
+
     // Tricky case: UITableViewWrapperView
     if ([scrollView.superview isKindOfClass:[UITableView class]]) {
         return NO;
@@ -134,16 +134,16 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
     if ([scrollView.superview isKindOfClass:NSClassFromString(@"UITableViewCellContentView")]) {
         return NO;
     }
-    
+
     BOOL shouldScroll = YES;
     if ([self.delegate respondsToSelector:@selector(scrollView:shouldScrollWithSubView:)]) {
         shouldScroll = [self.delegate scrollView:self shouldScrollWithSubView:scrollView];;
     }
-    
+
     if (shouldScroll) {
         [self addObservedView:scrollView];
     }
-    
+
     return shouldScroll;
 }
 
@@ -153,12 +153,11 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
     // Collapse header content view
     [self scrollView: self setContentOffset: CGPointZero];
     _isLockKVO = true;
-    _isHeaderClosed = YES;
 }
 
 - (void)addObserverToView:(UIScrollView *)scrollView {
     _lock = (scrollView.contentOffset.y > -scrollView.contentInset.top);
-    
+
     [scrollView addObserver:self
                  forKeyPath:NSStringFromSelector(@selector(contentOffset))
                     options:NSKeyValueObservingOptionOld|NSKeyValueObservingOptionNew
@@ -185,29 +184,26 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
     if (_isLockKVO) { return; }
 
     if (context == kMXScrollViewKVOContext && [keyPath isEqualToString:NSStringFromSelector(@selector(contentOffset))]) {
-        
+
         CGPoint new = [[change objectForKey:NSKeyValueChangeNewKey] CGPointValue];
         CGPoint old = [[change objectForKey:NSKeyValueChangeOldKey] CGPointValue];
         CGFloat diff = old.y - new.y;
-        
-        if (diff == 0.0 || !_isObserving) return;
-        
-        if (object == self) {
 
+        if (diff == 0.0 || !_isObserving) return;
+
+        if (object == self) {
+            _isHeaderClosed = true;
             if (diff > 0 && _lock && _isHeaderClosed) {
                 /* HeaderView - Closed - Scroll Up */
                 // NSLog(@"Log Scroll Header - Closed - Scroll Up %f", self.contentOffset.y);
                 [self scrollView:self setContentOffset:old];
-                _isHeaderClosed = true;
             } else if (self.contentOffset.y < -self.contentInset.top && !self.bounces) {
                 // NSLog(@"Log Scroll Header == 333 %f | InsetTop: %f | bounes: %f", self.contentOffset.y, self.contentInset.top, self.bounces);
                 [self scrollView:self setContentOffset:CGPointMake(self.contentOffset.x, -self.contentInset.top)];
-                _isHeaderClosed = true;
             } else if (self.contentOffset.y > -self.parallaxHeader.minimumHeight) {
                 /* HeaderView - Closed - Scroll Down */
                 // NSLog(@"Log Scroll Header - Closed - Scroll Down %f", self.contentOffset.y);
                 [self scrollView:self setContentOffset:CGPointMake(self.contentOffset.x, -self.parallaxHeader.minimumHeight)];
-                _isHeaderClosed = true;
             } else {
                 /* HeaderView - Scroll - Appear */
                 // NSLog(@"Log Scroll Header Unknown %f", self.contentOffset.y);
@@ -270,15 +266,14 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
 
 #pragma mark <UIScrollViewDelegate>
 
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView{
+    _isLockKVO = false;
+}
+
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
     if (_isLockKVO) {
         [self setContentOffset:CGPointZero];
     }
-}
-
-- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
-    _lock = NO;
-    [self removeObservedViews];
 }
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
@@ -288,8 +283,9 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
     }
 }
 
-- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
-    _isLockKVO = NO;
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+    _lock = NO;
+    [self removeObservedViews];
 }
 
 @end
@@ -306,17 +302,17 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
 
 #pragma mark <UIScrollViewDelegate>
 
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView{
+    [(MXScrollView *)scrollView scrollViewWillBeginDragging:scrollView];
+    if ([self.delegate respondsToSelector:_cmd]) {
+        [self.delegate scrollViewWillBeginDragging:scrollView];
+    }
+}
+
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
     [(MXScrollView *)scrollView scrollViewDidScroll:scrollView];
     if ([self.delegate respondsToSelector:_cmd]) {
         [self.delegate scrollViewDidScroll:scrollView];
-    }
-}
-
-- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
-    [(MXScrollView *)scrollView scrollViewDidEndDecelerating:scrollView];
-    if ([self.delegate respondsToSelector:_cmd]) {
-        [self.delegate scrollViewDidEndDecelerating:scrollView];
     }
 }
 
@@ -327,10 +323,10 @@ static void * const kMXScrollViewKVOContext = (void*)&kMXScrollViewKVOContext;
     }
 }
 
-- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView{
-    [(MXScrollView *)scrollView scrollViewWillBeginDragging:scrollView];
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+    [(MXScrollView *)scrollView scrollViewDidEndDecelerating:scrollView];
     if ([self.delegate respondsToSelector:_cmd]) {
-        [self.delegate scrollViewWillBeginDragging:scrollView];
+        [self.delegate scrollViewDidEndDecelerating:scrollView];
     }
 }
 
