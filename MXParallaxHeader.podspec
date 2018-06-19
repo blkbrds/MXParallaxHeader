@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = "MXParallaxHeader"
-  s.version          = "0.6.1"
+  s.version          = "0.6.2"
   s.summary          = "Simple parallax header for UIScrollView."
   s.description      = <<-DESC
   							MXParallaxHeader is a simple header class for UIScrolView.
@@ -17,10 +17,10 @@ Pod::Spec.new do |s|
 							Moreover, MXScrollViewController allows you to add a MXParallaxHeader to any kind of UIViewController.
                        DESC
 
-  s.homepage         = "https://github.com/maxep/MXParallaxHeader"
+  s.homepage         = "https://github.com/blkbrds/MXParallaxHeader"
   s.license          = 'MIT'
   s.author           = { "Maxime Epain" => "maxime.epain@gmail.com" }
-  s.source           = { :git => "https://github.com/maxep/MXParallaxHeader.git", :tag => s.version.to_s }
+  s.source           = { :git => "https://github.com/blkbrds/MXParallaxHeader.git", :tag => s.version.to_s }
   s.social_media_url = 'https://twitter.com/MaximeEpain'
 
   s.platform     = :ios, '7.0'
